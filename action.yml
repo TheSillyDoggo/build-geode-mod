@@ -31,7 +31,7 @@ inputs:
     required: false
     default: false
   target:
-    description: Geode target to build for. Can be either "Win32", "MacOS", "Android32" or "Android64".
+    description: Geode target to build for. Can be either "Win32", "MacOS", "Android32", "Android64" or "iOS.
     required: false
     default: ""
   bindings:
@@ -81,6 +81,9 @@ runs:
         elif [ "$RUNNER_OS" = "macOS" ]; then
           ID=mac
           DEFAULT_TARGET=MacOS
+        elif [ "$RUNNER_OS" = "iOS" ]; then
+          ID=ios
+          DEFAULT_TARGET=iOS
         fi
 
         TARGET=${{ inputs.target }}
@@ -96,6 +99,8 @@ runs:
           OUTPUT_ID=win
         elif [ "$TARGET" = "MacOS" ]; then
           OUTPUT_ID=mac
+        elif [ "$TARGET" = "iOS" ]; then
+          OUTPUT_ID=ios
         fi
 
         echo "id=$ID" >> $GITHUB_OUTPUT
@@ -240,6 +245,8 @@ runs:
           export CFLAGS="--target=i686-windows-msvc"
           export CXXFLAGS="--target=i686-windows-msvc"
           export LDFLAGS="--target=i686-windows-msvc"
+        elif [ ${{ steps.platform.outputs.target_id }} = "ios" ]; then
+          CMAKE_EXTRA_ARGS="-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_SYSTEM_NAME=\"iOS\""
         fi
         cmake -B build -DCMAKE_BUILD_TYPE=${{ inputs.build-config }} -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DGEODE_CODEGEN_CMAKE_ARGS="-DCMAKE_C_COMPILER=clang;-DCMAKE_CXX_COMPILER=clang++;-G Ninja" -G Ninja $CMAKE_EXTRA_ARGS -DGEODE_DONT_INSTALL_MODS=ON -DGEODE_TARGET_PLATFORM=${{ steps.platform.outputs.target }} ${{ inputs.configure-args }}
         cmake --build build --config ${{ inputs.build-config }} ${{ inputs.build-args }}
